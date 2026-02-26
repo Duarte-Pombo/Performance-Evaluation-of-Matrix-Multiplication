@@ -9,8 +9,8 @@ using namespace std;
 #define SYSTEMTIME clock_t
 
  
-void OnMult(int m_ar, int m_br) 
-{
+void OnMult(int m_ar, int m_br){
+    
     SYSTEMTIME Time1, Time2;
     
     char st[100];
@@ -34,29 +34,79 @@ void OnMult(int m_ar, int m_br)
     Time1 = clock();
 
     for(i = 0; i < m_ar; i++)
-    {
-        for(j = 0; j < m_br; j++)
-        {
+        for(j = 0; j < m_br; j++){
             temp = 0;
-            for(k = 0; k < m_ar; k++)
-            {    
+            for(k = 0; k < m_ar; k++)    
                 temp += pha[i*m_ar + k] * phb[k*m_br + j];
-            }
             phc[i*m_ar + j] = temp;
+        }
+
+    Time2 = clock();
+    snprintf(st, sizeof(st), "Time: %3.3f seconds\n",
+         (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+    
+    cout << st;
+    cout << "Result matrix: " << endl;
+    
+    for(i = 0; i < 1; i++){
+        for(j = 0; j < min(10, m_br); j++)
+            cout << phc[j] << " ";
+    }
+
+    cout << endl;
+
+    free(pha);
+    free(phb);
+    free(phc);
+}
+
+// Line-by-line matrix multiplication
+void OnMultLine(int m_ar, int m_br){
+    SYSTEMTIME Time1, Time2;
+
+    char st[100];
+    int i, j, k;
+
+    double *pha, *phb, *phc;
+
+    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phb = (double *)malloc((m_ar * m_br) * sizeof(double));
+    phc = (double *)malloc((m_ar * m_br) * sizeof(double));
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_ar; j++)
+            pha[i*m_ar + j] = 1.0;
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_br; j++)
+            phb[i*m_br + j] = (double)(i + 1);
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_br; j++)
+            phc[i*m_br + j] = 0.0;
+
+    Time1 = clock();
+
+    for(i = 0; i < m_ar; i++){
+        for(k = 0; k < m_ar; k++){
+            for(j = 0; j < m_br; j++){
+                phc[i*m_br + j] += pha[i*m_ar + k] * phb[k*m_br + j];
+            }
         }
     }
 
     Time2 = clock();
     snprintf(st, sizeof(st), "Time: %3.3f seconds\n",
          (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+    
     cout << st;
-
     cout << "Result matrix: " << endl;
-    for(i = 0; i < 1; i++)
-    {
+    
+    for(i = 0; i < 1; i++){
         for(j = 0; j < min(10, m_br); j++)
             cout << phc[j] << " ";
     }
+
     cout << endl;
 
     free(pha);
@@ -65,22 +115,61 @@ void OnMult(int m_ar, int m_br)
 }
 
 
-// Line-by-line matrix multiplication
-void OnMultLine(int m_ar, int m_br)
-{
-   
-}
-
-
 // Block matrix multiplication
-void OnMultBlock(int m_ar, int m_br, int bkSize)
-{
- 
+void OnMultBlock(int m_ar, int m_br, int bkSize){
+    SYSTEMTIME Time1, Time2;
+
+    char st[100];
+    int i, j, k, ii, jj, kk;
+
+    double *pha, *phb, *phc;
+
+    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phb = (double *)malloc((m_ar * m_br) * sizeof(double));
+    phc = (double *)malloc((m_ar * m_br) * sizeof(double));
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_ar; j++)
+            pha[i*m_ar + j] = 1.0;
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_br; j++)
+            phb[i*m_br + j] = (double)(i + 1);
+
+    for(i = 0; i < m_ar; i++)
+        for(j = 0; j < m_br; j++)
+            phc[i*m_br + j] = 0.0;
+
+    Time1 = clock();
+
+    for(ii = 0; ii < m_ar; ii += bkSize)
+        for(kk = 0; kk < m_ar; kk += bkSize)
+            for(jj = 0; jj < m_br; jj += bkSize)
+                for(i = ii; i < min(ii + bkSize, m_ar); i++)
+                    for(k = kk; k < min(kk + bkSize, m_ar); k++)
+                        for(j = jj; j < min(jj + bkSize, m_br); j++)
+                            phc[i*m_br + j] += pha[i*m_ar + k] * phb[k*m_br + j];
+
+    Time2 = clock();
+    snprintf(st, sizeof(st), "Time: %3.3f seconds\n",
+         (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+    
+    cout << st; 
+    cout << "Result matrix: " << endl;
+    
+    for(i = 0; i < 1; i++){
+        for(j = 0; j < min(10, m_br); j++)
+            cout << phc[j] << " ";
+    }
+
+    cout << endl;
+
+    free(pha);
+    free(phb);
+    free(phc);
 }
 
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     int lin, col, blockSize;
     int op;
 
